@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Buvette">
+<link rel="manifest" href="./manifest.json">
+<title>Buvette du camping</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a18; }
+.app { max-width: 420px; margin: 0 auto; padding: 1rem; }
+.screen { display: none; }
+.screen.active { display: block; }
+.header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e0e0d8; }
+.header h2 { font-size: 17px; font-weight: 600; }
+.btn { width: 100%; padding: 11px; border-radius: 10px; border: 1px solid #ccc; background: #fff; color: #1a1a18; font-size: 14px; cursor: pointer; text-align: left; font-family: inherit; }
+.btn:active { opacity: 0.7; }
+.btn-primary { background: #2563eb; color: #fff; border-color: #2563eb; text-align: center; font-weight: 600; }
+.btn-danger { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; text-align: center; }
+.btn-warning { background: #fef3c7; color: #92400e; border-color: #fcd34d; text-align: center; }
+.btn-success { background: #dcfce7; color: #166534; border-color: #86efac; text-align: center; }
+.client-btn { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 11px 14px; }
+.new-client { display: flex; gap: 8px; margin-bottom: 1rem; }
+.new-client input { flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid #ccc; background: #fff; color: #1a1a18; font-size: 15px; font-family: inherit; }
+.products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
+.prod-btn { padding: 12px 8px; text-align: center; border-radius: 10px; border: 1px solid #e0e0d8; background: #fff; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.prod-btn:active { background: #eff6ff; border-color: #93c5fd; }
+.prod-btn .pname { font-size: 14px; font-weight: 600; color: #1a1a18; }
+.prod-btn .pprice { font-size: 13px; color: #666; margin-top: 2px; }
+.current-order { background: #fff; border-radius: 12px; border: 1px solid #e0e0d8; padding: 10px 14px; margin-bottom: 1rem; }
+.order-line { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #f0f0ea; }
+.order-line:last-child { border-bottom: none; }
+.ol-name { font-size: 14px; flex: 1; }
+.ol-qty { display: flex; align-items: center; gap: 8px; }
+.qty-btn { width: 26px; height: 26px; border-radius: 50%; border: 1px solid #ccc; background: #f5f5f0; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; color: #1a1a18; font-family: inherit; }
+.ol-price { font-size: 13px; color: #555; min-width: 44px; text-align: right; }
+.total-line { display: flex; justify-content: space-between; font-weight: 700; font-size: 15px; padding-top: 10px; margin-top: 4px; }
+.tournee-card { background: #fff; border-radius: 12px; border: 1px solid #e0e0d8; padding: 10px 14px; margin-bottom: 8px; }
+.tournee-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.tournee-num { font-size: 12px; color: #888; }
+.tournee-total { font-size: 14px; font-weight: 600; color: #2563eb; }
+.tournee-line { font-size: 13px; color: #555; padding: 2px 0; }
+.grand-total { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: #dcfce7; border-radius: 10px; border: 1px solid #86efac; margin-bottom: 1rem; }
+.grand-total span { font-size: 16px; font-weight: 700; color: #166534; }
+.btn-row { display: flex; gap: 8px; margin-bottom: 0.75rem; }
+.btn-row .btn { font-size: 13px; padding: 10px 8px; text-align: center; }
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 100; }
+.modal-overlay.open { display: flex; }
+.modal { background: #fff; border-radius: 16px; padding: 1.25rem; width: 300px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+.modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 1rem; }
+.modal input { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #ccc; font-size: 15px; margin-bottom: 0.75rem; font-family: inherit; color: #1a1a18; }
+.modal .btn-row .btn { flex: 1; }
+.admin-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0f0ea; }
+.admin-item:last-child { border-bottom: none; }
+.ai-name { font-size: 14px; font-weight: 600; }
+.ai-price { font-size: 12px; color: #888; margin-top: 2px; }
+.admin-item-actions { display: flex; gap: 6px; }
+.icon-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e0e0d8; background: #f5f5f0; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #555; font-family: inherit; }
+.icon-btn.del { color: #b91c1c; border-color: #fca5a5; background: #fee2e2; }
+.section-label { font-size: 12px; color: #888; margin-bottom: 6px; margin-top: 14px; text-transform: uppercase; letter-spacing: 0.05em; }
+.back-btn { background: none; border: none; cursor: pointer; color: #2563eb; font-size: 14px; padding: 0; font-family: inherit; display: flex; align-items: center; gap: 4px; }
+.empty { text-align: center; padding: 2rem 1rem; color: #aaa; font-size: 14px; }
+.reset-zone { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #fca5a5; }
+.reset-zone > p { font-size: 12px; color: #aaa; margin-bottom: 8px; text-align: center; }
+.confirm-zone { background: #fee2e2; border: 1px solid #fca5a5; border-radius: 12px; padding: 1rem; margin-top: 0.75rem; display: none; }
+.confirm-zone p { font-size: 13px; color: #b91c1c; margin-bottom: 0.75rem; text-align: center; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ACCUEIL -->
+  <div id="screen-home" class="screen active">
+    <div class="header">
+      <i class="ti ti-beer" style="font-size:22px;color:#2563eb"></i>
+      <h2>Buvette du camping</h2>
+      <button onclick="showScreen('screen-admin')" style="margin-left:auto;background:#eff6ff;border:1px solid #93c5fd;border-radius:10px;padding:7px 12px;cursor:pointer;display:flex;align-items:center;gap:6px;color:#2563eb;font-size:13px;font-weight:600;font-family:inherit;">
+        <i class="ti ti-settings" style="font-size:16px"></i> Admin
+      </button>
+    </div>
+    <p class="section-label">Clients actifs</p>
+    <div id="clients-list"></div>
+    <div class="new-client">
+      <input type="text" id="new-client-input" placeholder="Nom (Jean-Luc, nounours...)" autocomplete="off" />
+      <button class="btn btn-primary" style="width:auto;padding:10px 16px" onclick="addClient()">
+        <i class="ti ti-plus"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- COMMANDE -->
+  <div id="screen-order" class="screen">
+    <div class="header">
+      <button class="back-btn" onclick="showScreen('screen-home')">
+        <i class="ti ti-arrow-left"></i> Retour
+      </button>
+      <h2 id="order-title" style="margin-left:8px">Commande</h2>
+    </div>
+    <p class="section-label">Produits</p>
+    <div id="products-grid" class="products-grid"></div>
+    <p class="section-label">Tournée en cours</p>
+    <div class="current-order" id="current-order-display">
+      <p class="empty">Aucun article — tape sur un produit</p>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-success" onclick="validateTournee()"><i class="ti ti-check"></i> Valider la tournée</button>
+      <button class="btn btn-danger" onclick="clearTournee()"><i class="ti ti-trash"></i> Vider</button>
+    </div>
+    <button class="btn" onclick="showArdoise()" style="text-align:center;font-size:14px">
+      <i class="ti ti-receipt"></i> Voir l'ardoise complète
+    </button>
+  </div>
+
+  <!-- ARDOISE -->
+  <div id="screen-ardoise" class="screen">
+    <div class="header">
+      <button class="back-btn" onclick="showScreen('screen-order')">
+        <i class="ti ti-arrow-left"></i> Retour
+      </button>
+      <h2 id="ardoise-title" style="margin-left:8px">Ardoise</h2>
+    </div>
+    <div id="ardoise-content"></div>
+    <button class="btn btn-danger" onclick="resetClient()" style="text-align:center;margin-top:0.5rem">
+      <i class="ti ti-check-all"></i> Clôturer & remettre à zéro
+    </button>
+  </div>
+
+  <!-- ADMIN -->
+  <div id="screen-admin" class="screen">
+    <div class="header">
+      <button class="back-btn" onclick="showScreen('screen-home')">
+        <i class="ti ti-arrow-left"></i> Retour
+      </button>
+      <h2 style="margin-left:8px">Tarif</h2>
+    </div>
+    <div id="admin-products"></div>
+    <button class="btn btn-primary" style="text-align:center;margin-top:1rem" onclick="openAddProduct()">
+      <i class="ti ti-plus"></i> Ajouter un article
+    </button>
+    <div class="reset-zone">
+      <p>Fin de soirée — tout effacer</p>
+      <button class="btn btn-warning" onclick="toggleResetConfirm()">
+        <i class="ti ti-refresh"></i> Remise à zéro générale
+      </button>
+      <div class="confirm-zone" id="confirm-reset-zone">
+        <p>⚠️ Tous les clients et toutes les ardoises seront supprimés. C'est définitif.</p>
+        <div class="btn-row">
+          <button class="btn" onclick="toggleResetConfirm()">Annuler</button>
+          <button class="btn btn-danger" onclick="resetAll()">Confirmer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="qty-modal">
+  <div class="modal">
+    <h3 id="qty-modal-title">Quantité</h3>
+    <input type="number" id="qty-input" min="1" value="1" />
+    <div class="btn-row">
+      <button class="btn" onclick="closeModal('qty-modal')">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmQty()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="add-product-modal">
+  <div class="modal">
+    <h3>Nouvel article</h3>
+    <input type="text" id="prod-name-input" placeholder="Nom (ex: Citronnade)" autocomplete="off" />
+    <input type="number" id="prod-price-input" placeholder="Prix (ex: 2.00)" step="0.10" min="0" />
+    <div class="btn-row">
+      <button class="btn" onclick="closeModal('add-product-modal')">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmAddProduct()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="edit-product-modal">
+  <div class="modal">
+    <h3>Modifier l'article</h3>
+    <input type="text" id="edit-prod-name" placeholder="Nom" autocomplete="off" />
+    <input type="number" id="edit-prod-price" placeholder="Prix" step="0.10" min="0" />
+    <div class="btn-row">
+      <button class="btn" onclick="closeModal('edit-product-modal')">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmEditProduct()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let state = JSON.parse(localStorage.getItem('buvette_state') || 'null') || {
+  products: [
+    {id:1, name:'Bière pression', price:2.50},
+    {id:2, name:'Bière bouteille', price:3.00},
+    {id:3, name:'Vin rouge', price:2.00},
+    {id:4, name:'Coca', price:2.00},
+    {id:5, name:'Eau', price:1.00},
+    {id:6, name:'Café', price:1.50},
+    {id:7, name:'Citronnade', price:2.00}
+  ],
+  clients: {},
+  nextProdId: 8
+};
+
+let currentClient = null;
+let pendingProduct = null;
+let editingProdId = null;
+
+function save() { localStorage.setItem('buvette_state', JSON.stringify(state)); }
+function fmt(n) { return n.toFixed(2) + ' €'; }
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'screen-home') renderHome();
+  if (id === 'screen-order') renderOrder();
+  if (id === 'screen-ardoise') renderArdoise();
+  if (id === 'screen-admin') renderAdmin();
+}
+
+function renderHome() {
+  const el = document.getElementById('clients-list');
+  const keys = Object.keys(state.clients);
+  if (!keys.length) { el.innerHTML = '<p class="empty">Aucun client — entre un prénom ci-dessous</p>'; return; }
+  el.innerHTML = keys.map(k => {
+    const c = state.clients[k];
+    const total = c.tournees.reduce((s,t) => s + t.total, 0) + currentTourneeTotal(k);
+    const nt = c.tournees.length + (hasPendingTournee(k) ? 1 : 0);
+    return `<button class="btn client-btn" onclick="openClient('${k.replace(/'/g,"\\'")}')">
+      <span style="font-weight:600;font-size:15px">${k}</span>
+      <span style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:12px;color:#888">${nt} tournée${nt>1?'s':''}</span>
+        <span style="font-weight:700;font-size:15px;color:#2563eb">${fmt(total)}</span>
+      </span>
+    </button>`;
+  }).join('');
+}
+
+function hasPendingTournee(name) {
+  const c = state.clients[name];
+  return c && c.current && Object.keys(c.current).length > 0;
+}
+
+function currentTourneeTotal(name) {
+  const c = state.clients[name];
+  if (!c || !c.current) return 0;
+  return Object.entries(c.current).reduce((s,[id,qty]) => {
+    const p = state.products.find(p => p.id == id);
+    return s + (p ? p.price * qty : 0);
+  }, 0);
+}
+
+function addClient() {
+  const inp = document.getElementById('new-client-input');
+  const name = inp.value.trim();
+  if (!name) return;
+  if (!state.clients[name]) state.clients[name] = {tournees: [], current: {}};
+  save(); inp.value = '';
+  openClient(name);
+}
+
+function openClient(name) { currentClient = name; showScreen('screen-order'); }
+
+function renderOrder() {
+  document.getElementById('order-title').textContent = currentClient;
+  const grid = document.getElementById('products-grid');
+  grid.innerHTML = state.products.map(p =>
+    `<div class="prod-btn" onclick="selectProduct(${p.id})">
+      <div class="pname">${p.name}</div>
+      <div class="pprice">${fmt(p.price)}</div>
+    </div>`
+  ).join('');
+  renderCurrentOrder();
+}
+
+function renderCurrentOrder() {
+  const c = state.clients[currentClient];
+  const el = document.getElementById('current-order-display');
+  const entries = Object.entries(c.current || {});
+  if (!entries.length) { el.innerHTML = '<p class="empty">Aucun article — tape sur un produit</p>'; return; }
+  let total = 0;
+  let html = entries.map(([id,qty]) => {
+    const p = state.products.find(p => p.id == id);
+    if (!p) return '';
+    const sub = p.price * qty; total += sub;
+    return `<div class="order-line">
+      <span class="ol-name">${p.name}</span>
+      <div class="ol-qty">
+        <button class="qty-btn" onclick="changeQty(${id},-1)">−</button>
+        <span style="font-size:15px;min-width:18px;text-align:center;font-weight:600">${qty}</span>
+        <button class="qty-btn" onclick="changeQty(${id},1)">+</button>
+      </div>
+      <span class="ol-price">${fmt(sub)}</span>
+    </div>`;
+  }).join('');
+  html += `<div class="total-line"><span>Total tournée</span><span>${fmt(total)}</span></div>`;
+  el.innerHTML = html;
+}
+
+function changeQty(id, delta) {
+  const c = state.clients[currentClient];
+  if (!c.current) c.current = {};
+  const cur = (c.current[id] || 0) + delta;
+  if (cur <= 0) delete c.current[id]; else c.current[id] = cur;
+  save(); renderCurrentOrder(); renderHome();
+}
+
+function selectProduct(id) {
+  pendingProduct = id;
+  const p = state.products.find(p => p.id == id);
+  document.getElementById('qty-modal-title').textContent = p.name + ' — combien ?';
+  document.getElementById('qty-input').value = 1;
+  document.getElementById('qty-modal').classList.add('open');
+  setTimeout(() => document.getElementById('qty-input').focus(), 100);
+}
+
+function confirmQty() {
+  const qty = parseInt(document.getElementById('qty-input').value) || 1;
+  const c = state.clients[currentClient];
+  if (!c.current) c.current = {};
+  c.current[pendingProduct] = (c.current[pendingProduct] || 0) + qty;
+  save(); closeModal('qty-modal'); renderCurrentOrder(); renderHome();
+}
+
+function validateTournee() {
+  const c = state.clients[currentClient];
+  const entries = Object.entries(c.current || {});
+  if (!entries.length) return;
+  let total = 0;
+  const lines = entries.map(([id,qty]) => {
+    const p = state.products.find(p => p.id == id);
+    const sub = p ? p.price * qty : 0; total += sub;
+    return {name: p ? p.name : '?', qty, sub};
+  });
+  c.tournees.push({lines, total, ts: Date.now()});
+  c.current = {};
+  save(); renderOrder(); renderHome();
+}
+
+function clearTournee() {
+  state.clients[currentClient].current = {};
+  save(); renderCurrentOrder();
+}
+
+function showArdoise() { showScreen('screen-ardoise'); }
+
+function renderArdoise() {
+  const c = state.clients[currentClient];
+  document.getElementById('ardoise-title').textContent = 'Ardoise — ' + currentClient;
+  const el = document.getElementById('ardoise-content');
+  if (!c.tournees.length && !Object.keys(c.current || {}).length) {
+    el.innerHTML = '<p class="empty">Aucune tournée validée</p>'; return;
+  }
+  let grandTotal = 0, html = '';
+  c.tournees.forEach((t,i) => {
+    grandTotal += t.total;
+    html += `<div class="tournee-card">
+      <div class="tournee-header"><span class="tournee-num">Tournée ${i+1}</span><span class="tournee-total">${fmt(t.total)}</span></div>
+      ${t.lines.map(l => `<div class="tournee-line">${l.qty}× ${l.name} — ${fmt(l.sub)}</div>`).join('')}
+    </div>`;
+  });
+  const pending = Object.entries(c.current || {});
+  if (pending.length) {
+    let ptotal = 0;
+    let plines = pending.map(([id,qty]) => {
+      const p = state.products.find(p => p.id == id);
+      const sub = p ? p.price * qty : 0; ptotal += sub;
+      return `<div class="tournee-line" style="color:#2563eb">${qty}× ${p ? p.name : '?'} — ${fmt(sub)}</div>`;
+    });
+    grandTotal += ptotal;
+    html += `<div class="tournee-card" style="border-color:#93c5fd">
+      <div class="tournee-header"><span class="tournee-num" style="color:#2563eb">En cours...</span><span class="tournee-total">${fmt(ptotal)}</span></div>
+      ${plines.join('')}
+    </div>`;
+  }
+  html += `<div class="grand-total"><span>Total ardoise</span><span>${fmt(grandTotal)}</span></div>`;
+  el.innerHTML = html;
+}
+
+function resetClient() {
+  if (confirm('Clôturer et remettre à zéro l\'ardoise de ' + currentClient + ' ?')) {
+    delete state.clients[currentClient];
+    save(); currentClient = null; showScreen('screen-home');
+  }
+}
+
+function renderAdmin() {
+  const el = document.getElementById('admin-products');
+  if (!state.products.length) { el.innerHTML = '<p class="empty">Aucun article</p>'; return; }
+  el.innerHTML = state.products.map((p,i) => `
+    <div class="admin-item">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="color:#ccc;font-size:18px;cursor:grab">⠿</span>
+        <div>
+          <div class="ai-name">${p.name}</div>
+          <div class="ai-price">${fmt(p.price)}</div>
+        </div>
+      </div>
+      <div class="admin-item-actions">
+        <button class="icon-btn" onclick="moveProduct(${i},-1)" ${i===0?'disabled':''}><i class="ti ti-arrow-up" style="font-size:14px"></i></button>
+        <button class="icon-btn" onclick="moveProduct(${i},1)" ${i===state.products.length-1?'disabled':''}><i class="ti ti-arrow-down" style="font-size:14px"></i></button>
+        <button class="icon-btn" onclick="openEditProduct(${p.id})"><i class="ti ti-edit" style="font-size:14px"></i></button>
+        <button class="icon-btn del" onclick="deleteProduct(${p.id})"><i class="ti ti-trash" style="font-size:14px"></i></button>
+      </div>
+    </div>`
+  ).join('');
+}
+
+function moveProduct(i, dir) {
+  const j = i + dir;
+  if (j < 0 || j >= state.products.length) return;
+  [state.products[i], state.products[j]] = [state.products[j], state.products[i]];
+  save(); renderAdmin();
+}
+
+function deleteProduct(id) {
+  if (confirm('Supprimer cet article ?')) {
+    state.products = state.products.filter(p => p.id !== id);
+    save(); renderAdmin();
+  }
+}
+
+function openAddProduct() {
+  document.getElementById('prod-name-input').value = '';
+  document.getElementById('prod-price-input').value = '';
+  document.getElementById('add-product-modal').classList.add('open');
+  setTimeout(() => document.getElementById('prod-name-input').focus(), 100);
+}
+
+function confirmAddProduct() {
+  const name = document.getElementById('prod-name-input').value.trim();
+  const price = parseFloat(document.getElementById('prod-price-input').value);
+  if (!name || isNaN(price)) return;
+  state.products.push({id: state.nextProdId++, name, price});
+  save(); closeModal('add-product-modal'); renderAdmin();
+}
+
+function openEditProduct(id) {
+  editingProdId = id;
+  const p = state.products.find(p => p.id === id);
+  document.getElementById('edit-prod-name').value = p.name;
+  document.getElementById('edit-prod-price').value = p.price;
+  document.getElementById('edit-product-modal').classList.add('open');
+  setTimeout(() => document.getElementById('edit-prod-name').focus(), 100);
+}
+
+function confirmEditProduct() {
+  const name = document.getElementById('edit-prod-name').value.trim();
+  const price = parseFloat(document.getElementById('edit-prod-price').value);
+  if (!name || isNaN(price)) return;
+  const p = state.products.find(p => p.id === editingProdId);
+  p.name = name; p.price = price;
+  save(); closeModal('edit-product-modal'); renderAdmin();
+}
+
+function toggleResetConfirm() {
+  const zone = document.getElementById('confirm-reset-zone');
+  zone.style.display = zone.style.display === 'block' ? 'none' : 'block';
+}
+
+function resetAll() {
+  state.clients = {};
+  save(); toggleResetConfirm(); renderAdmin(); renderHome();
+  alert('Bonne nuit ! Tous les clients ont été effacés. 🍺');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.getElementById('new-client-input').addEventListener('keydown', e => { if (e.key === 'Enter') addClient(); });
+document.getElementById('qty-input').addEventListener('keydown', e => { if (e.key === 'Enter') confirmQty(); });
+
+renderHome();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(() => console.log('Service Worker actif — mode offline prêt'))
+      .catch(e => console.log('SW non enregistré :', e));
+  });
+}
+</script>
+</body>
+</html>
