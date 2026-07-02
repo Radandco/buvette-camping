@@ -68,6 +68,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .reset-zone > p { font-size: 12px; color: #aaa; margin-bottom: 8px; text-align: center; }
 .confirm-zone { background: #fee2e2; border: 1px solid #fca5a5; border-radius: 12px; padding: 1rem; margin-top: 0.75rem; display: none; }
 .confirm-zone p { font-size: 13px; color: #b91c1c; margin-bottom: 0.75rem; text-align: center; font-weight: 600; }
+.bilan-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: #fff; border-radius: 10px; border: 1px solid #e0e0d8; margin-bottom: 8px; }
+.bilan-item .bi-name { font-size: 15px; font-weight: 600; color: #1a1a18; }
+.bilan-item .bi-total { font-size: 15px; font-weight: 700; color: #2563eb; }
+.bilan-grand { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: #2563eb; border-radius: 12px; margin-top: 1rem; }
+.bilan-grand span { font-size: 17px; font-weight: 700; color: #fff; }
 </style>
 </head>
 <body>
@@ -85,6 +90,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     </div>
     <p class="section-label">Clients actifs</p>
     <div id="clients-list"></div>
+    <button class="btn" onclick="showScreen('screen-bilan')" style="text-align:center;font-size:13px;margin-bottom:0.75rem;color:#166534;border-color:#86efac;background:#dcfce7;">
+      <i class="ti ti-chart-bar"></i> Bilan de la journée
+    </button>
     <div class="new-client">
       <input type="text" id="new-client-input" placeholder="Nom (Jean-Luc, nounours...)" autocomplete="off" />
       <button class="btn btn-primary" style="width:auto;padding:10px 16px" onclick="addClient()">
@@ -157,6 +165,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     </div>
   </div>
 
+  <!-- BILAN -->
+  <div id="screen-bilan" class="screen">
+    <div class="header">
+      <button class="back-btn" onclick="showScreen('screen-home')">
+        <i class="ti ti-arrow-left"></i> Retour
+      </button>
+      <h2 style="margin-left:8px">Bilan de la journée</h2>
+    </div>
+    <div id="bilan-content"></div>
+  </div>
+
 </div>
 
 <!-- MODALS -->
@@ -207,7 +226,8 @@ let state = JSON.parse(localStorage.getItem('buvette_state') || 'null') || {
     {id:7, name:'Citronnade', price:2.00}
   ],
   clients: {},
-  nextProdId: 8
+  nextProdId: 8,
+  bilan: []
 };
 
 let currentClient = null;
@@ -224,6 +244,7 @@ function showScreen(id) {
   if (id === 'screen-order') renderOrder();
   if (id === 'screen-ardoise') renderArdoise();
   if (id === 'screen-admin') renderAdmin();
+  if (id === 'screen-bilan') renderBilan();
 }
 
 function renderHome() {
@@ -387,6 +408,12 @@ function renderArdoise() {
 
 function resetClient() {
   if (confirm('Clôturer et remettre à zéro l\'ardoise de ' + currentClient + ' ?')) {
+    const c = state.clients[currentClient];
+    const total = c.tournees.reduce((s,t) => s + t.total, 0) + currentTourneeTotal(currentClient);
+    if (total > 0) {
+      if (!state.bilan) state.bilan = [];
+      state.bilan.push({ name: currentClient, total, ts: Date.now() });
+    }
     delete state.clients[currentClient];
     save(); currentClient = null; showScreen('screen-home');
   }
@@ -468,8 +495,43 @@ function toggleResetConfirm() {
 
 function resetAll() {
   state.clients = {};
+  state.bilan = [];
   save(); toggleResetConfirm(); renderAdmin(); renderHome();
-  alert('Bonne nuit ! Tous les clients ont été effacés. 🍺');
+  alert('Bonne nuit ! Tous les clients et le bilan ont été effacés. 🍺');
+}
+
+function renderBilan() {
+  const el = document.getElementById('bilan-content');
+  if (!state.bilan) state.bilan = [];
+  const actifs = Object.entries(state.clients).map(([name, c]) => {
+    const total = c.tournees.reduce((s,t) => s + t.total, 0) + currentTourneeTotal(name);
+    return { name, total, encaisse: false };
+  });
+  const encaisses = state.bilan.map(b => ({ ...b, encaisse: true }));
+  const tous = [...encaisses, ...actifs];
+  if (!tous.length) {
+    el.innerHTML = '<p class="empty">Aucune vente pour le moment</p>'; return;
+  }
+  const grandTotal = tous.reduce((s, b) => s + b.total, 0);
+  let html = '';
+  if (encaisses.length) {
+    html += '<p class="section-label">Encaissés</p>';
+    html += encaisses.map(b => `
+      <div class="bilan-item">
+        <span class="bi-name"><i class="ti ti-check" style="color:#166534;margin-right:4px"></i>${b.name}</span>
+        <span class="bi-total">${fmt(b.total)}</span>
+      </div>`).join('');
+  }
+  if (actifs.length) {
+    html += '<p class="section-label" style="margin-top:12px">En cours (non encaissés)</p>';
+    html += actifs.map(b => `
+      <div class="bilan-item" style="border-color:#93c5fd;background:#eff6ff">
+        <span class="bi-name" style="color:#2563eb"><i class="ti ti-clock" style="margin-right:4px"></i>${b.name}</span>
+        <span class="bi-total">${fmt(b.total)}</span>
+      </div>`).join('');
+  }
+  html += `<div class="bilan-grand"><span>Total journée</span><span>${fmt(grandTotal)}</span></div>`;
+  el.innerHTML = html;
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
